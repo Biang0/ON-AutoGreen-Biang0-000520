@@ -9,16 +9,18 @@ on:
 
 jobs:
   autogreen:
-    runs-on: ubuntu-latest  
+    runs-on: ubuntu-latest
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Auto green
         run: |
-          git config --local user.email "wangyuan0999@gmail.com"    
-          git config --local user.name "Biang0"    
-          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}  
+          set -e
+          git config --local user.email "wangyuan0999@gmail.com"
+          git config --local user.name "Biang0"
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
-          git commit --allow-empty -m "Keep writing documents now..."
-          git push
+          commit_message="Keep writing documents at $(date +'%Y-%m-%d %H:%M:%S')"
+          git commit --allow-empty -m "$commit_message"
+          git push    
