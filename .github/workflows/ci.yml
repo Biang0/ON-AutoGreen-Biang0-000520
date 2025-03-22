@@ -1,6 +1,14 @@
 name: ci
 
 on:
+  # 手动触发事件
+  workflow_dispatch:
+    inputs:
+      enable:
+        description: 'Enable or disable the auto green feature'
+        required: true
+        default: 'true'
+        type: boolean  
   push:
     branches:
       - master
@@ -10,6 +18,7 @@ on:
 jobs:
   autogreen:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.enable == 'true') }}
     steps:
       - name: Clone repository
         uses: actions/checkout@v3
