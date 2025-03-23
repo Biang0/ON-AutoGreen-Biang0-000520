@@ -6,9 +6,12 @@ on:
     inputs:
       enable:
         description: 'Enable or disable the auto green feature'
-        required: true
+        required: true  
         default: 'true'
-        type: boolean  
+        type: choice
+        options:
+          - 'true'
+          - 'false'
   push:
     branches:
       - master
