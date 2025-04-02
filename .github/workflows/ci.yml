@@ -1,12 +1,7 @@
-name: GitHub Heatmap - I LOVE YOU
+name: GitHub Heatmap - I LOVE YOU (2020)
 
 on:
   workflow_dispatch:  # 允许手动触发
-  push:
-    branches:
-      - master
-  schedule:
-    - cron: "0 0 * * 0"  # 每周日运行一次
 
 jobs:
   heatmap:
@@ -15,7 +10,7 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v3
 
-      - name: Generate "I LOVE YOU" pattern on heatmap
+      - name: Generate "I LOVE YOU" pattern on 2020 heatmap
         run: |
           set -e
           git config --local user.email "wangyuan0999@gmail.com"
@@ -23,8 +18,8 @@ jobs:
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
 
-          # 2023年1月1日是星期日
-          start_date="2023-01-01"
+          # 2020年1月1日是星期三，所以要适配
+          start_date="2019-12-29"  # 让第一周的周日对齐2020年的热力图
 
           # "I LOVE YOU" 点阵 (7x53)
           pattern=(
