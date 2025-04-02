@@ -1,6 +1,7 @@
-name: GitHub Heatmap - 2021 (Sunday First)
+name: GitHub Heatmap - 2020 Full Green
 on:
   workflow_dispatch:
+
 jobs:
   heatmap:
     runs-on: ubuntu-latest
@@ -9,7 +10,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Generate 2021 Pattern
+
+      - name: Generate 2020 Pattern
         run: |
           set -e
           git config --local user.email "your_email@example.com"
@@ -17,19 +19,27 @@ jobs:
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase --autostash
           
-          # 2021年参数（2021-01-03为第一个完整周的周日）
-          start_date="2021-01-03"
+          # 2020年参数（第一个完整周的周日）
+          start_date="2020-01-05"
           total_weeks=52
-          
-          # 组合字符：2021
+
+          # 数码管字符矩阵（7天×5周）
+          characters=(
+            "11111\n00001\n11111\n10000\n11111"  # 2
+            "11111\n10001\n10001\n10001\n11111"  # 0
+            "00100\n00100\n00100\n00100\n00100"  # 1
+            "11111\n10001\n11111\n10001\n11111"  # 8（备用）
+          )
+
+          # 组合字符：2020
           pattern="
-            ${characters[0]} ${characters[1]} ${characters[0]} ${characters[2]}
+            ${characters[0]} ${characters[1]} ${characters[0]} ${characters[1]}
           "
-          
+
           generate_heatmap() {
             local -a rows=($(echo "$pattern" | tr '\n' ' '))
-            local char_start_week=0
-            
+            local char_start_week=16  # 从周17开始显示（居中位置）
+
             for ((char=0; char<${#rows[@]}; char++)); do
               local char_data="${rows[char]}"
               for ((day=0; day<7; day++)); do  # 横轴：周日(0)到周六(6)
@@ -37,9 +47,9 @@ jobs:
                   local pos=$((week*7 + day))
                   if [[ "${char_data:pos:1}" == "1" ]]; then
                     commit_date=$(date -d "$start_date +$((char_start_week + week)) weeks +$day days" +"%Y-%m-%dT09:00:00Z")
-                    [[ "$commit_date" > "2021-12-31" ]] && break  # 防止跨年
-                    for i in {1..30}; do  # 提交30次确保深绿色
-                      GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "2021" --date "$commit_date"
+                    [[ "$commit_date" > "2020-12-31" ]] && break  # 防止跨年
+                    for i in {1..50}; do  # 深绿色区域提交50次
+                      GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "2020" --date "$commit_date"
                     done
                   fi
                 done
@@ -47,6 +57,17 @@ jobs:
               char_start_week=$((char_start_week + 5))
             done
           }
-          
+
+          # 生成全年绿色背景
+          for ((week=0; week<52; week++)); do
+            for ((day=0; day<7; day++)); do
+              commit_date=$(date -d "$start_date +$week weeks +$day days" +"%Y-%m-%dT09:00:00Z")
+              [[ "$commit_date" > "2020-12-31" ]] && break
+              for i in {1..30}; do  # 普通绿色区域提交30次
+                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Full Green" --date "$commit_date"
+              done
+            done
+          done
+
           generate_heatmap
           git push --force-with-lease
