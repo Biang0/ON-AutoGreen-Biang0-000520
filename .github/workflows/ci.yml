@@ -1,6 +1,8 @@
-name: GitHub Heatmap - HELLO 2019
+name: GitHub Heatmap - Transposed Layout
+
 on:
   workflow_dispatch:
+
 jobs:
   heatmap:
     runs-on: ubuntu-latest
@@ -9,38 +11,46 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Generate HELLO
+
+      - name: Generate transposed pattern
         run: |
           set -e
           git config --local user.email "wangyuan0999@gmail.com"
           git config --local user.name "Biang0"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase --autostash
-          
-          start_date="2019-01-06"  # 2019年第一个完整周（周日）
+
+          # 2021年参数
+          start_date="2021-01-03"  # 第一个完整周的周日
+          total_weeks=52
+
+          # 转置后字母矩阵（7行×5列）
           letters=(
-            "1000001\n1000001\n1111111\n1000001\n1000001"
-            "1111111\n1000000\n1111111\n1000000\n1111111"
-            "1000000\n1000000\n1000000\n1000000\n1111111"
-            "1000000\n1000000\n1000000\n1000000\n1111111"
-            "1111111\n1000001\n1000001\n1000001\n1111111"
+            "11111\n00100\n00100\n01110\n00100\n00100\n11111"  # H
+            "11111\n10000\n11111\n10000\n11111"  # E（示例）
+            # 其他字母...
           )
-          pattern_hello="${letters[0]} ${letters[1]} ${letters[2]} ${letters[3]} ${letters[4]}"
-          
-          generate_hello() {
-            local -a rows=($(echo "$pattern_hello" | tr ' ' '\n'))
-            for ((week=0; week<25; week++)); do  # 每个字母占5周，共25周
+
+          # 生成提交函数
+          generate_pattern() {
+            local pattern=$1
+            local -a rows=($(echo "$pattern" | tr ' ' '\n'))
+            
+            for ((week=0; week<52; week++)); do
               for ((day=0; day<7; day++)); do
-                local pos=$((week*5 + day))
+                local pos=$((week*7 + day))
                 if [[ "${rows[day]:pos:1}" == "1" ]]; then
                   commit_date=$(date -d "$start_date +$week weeks +$day days" +"%Y-%m-%dT09:00:00Z")
-                  for i in {1..30}; do  # 确保深绿色
-                    GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "HELLO 2019" --date "$commit_date"
+                  # 每个像素点提交30次
+                  for i in {1..30}; do
+                    GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Transposed - $commit_date" --date "$commit_date"
                   done
                 fi
               done
             done
           }
-          
-          generate_hello
+
+          # 生成HELLO热力图
+          generate_pattern "$pattern_hello"
+
           git push --force-with-lease
