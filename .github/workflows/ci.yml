@@ -39,12 +39,12 @@ jobs:
       - name: Generate and push commits
         run: |
           start_date="2023-01-01"
-          # 更新后的 "I Love You" 图案日期偏移量
           offsets=(
             2 9 16 28 29 30 31 32 39 46 57 58 59 60 65 66 67 72 73 74 81 88 95 105 106 107 112 113 114 121 128 135 145 146 147 152 153 154 161 168 175 185 186 187 192 193 194 201 208 215
           )
-          for offset in "${offsets[@]}":
-            commit_date=$(date -d "$start_date + $offset days" +'%Y-%m-%d %H:%M:%S')
+          for offset in "${offsets[@]}"; do
+            # 明确使用 bash 来执行命令，确保兼容性
+            commit_date=$(bash -c 'date -d "$0 + $1 days" +"%Y-%m-%d %H:%M:%S"' "$start_date" "$offset")
             commit_message="Show 'I Love You' at $commit_date"
             GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
           done
