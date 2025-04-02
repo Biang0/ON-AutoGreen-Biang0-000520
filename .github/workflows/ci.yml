@@ -59,4 +59,6 @@ jobs:
             fi
           done
 
-          git push -u origin main --force
+          # 自动检测默认分支并推送
+          default_branch=$(git remote show origin | awk '/HEAD branch/ {print $NF}')
+          git push -u origin "$default_branch" --force
