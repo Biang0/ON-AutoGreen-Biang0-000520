@@ -1,4 +1,5 @@
 name: ci
+名称 ：CI
 
 on:
   # 手动触发事件
@@ -26,9 +27,9 @@ jobs:
     if: |
       (github.event_name == 'schedule' &&
         (
-          "`expr ${{ github.run_number }} % 4`" == "0" ||
-          "`expr ${{ github.run_number }} % 3`" == "0" ||
-          "`expr ${{ github.run_number }} % 2`" == "0"
+          ${{ github.run_number % 4 == 0 }} ||
+          ${{ github.run_number % 3 == 0 }} ||
+          ${{ github.run_number % 2 == 0 }}
         )
       ) ||
       github.event_name == 'push' ||
