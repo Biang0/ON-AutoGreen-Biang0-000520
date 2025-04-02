@@ -1,8 +1,7 @@
 name: ci
 
-# 触发事件
 on:
-  # 手动触发工作流
+  # 手动触发事件
   workflow_dispatch:
     inputs:
       enable:
@@ -13,61 +12,64 @@ on:
         options:
           - 'true'
           - 'false'
-  # 当代码推送到 master 分支时触发
   push:
     branches:
       - master
-  # 定时触发，每 15 分钟尝试触发一次
   schedule:
+    # 每 15 分钟尝试触发一次，一天有 96 个 15 分钟的时间段
     - cron: "*/15 * * * *"
 
-# 定义工作
 jobs:
   autogreen:
-    # 指定运行环境
     runs-on: ubuntu-latest
     # 检查是否满足触发条件
     if: |
       (github.event_name == 'schedule' &&
         (
-          # 使用 JavaScript 表达式实现取模运算
           ${{ (fromJSON(format('[{}]', github.run_number))[0] % 4 == 0) }} ||
           ${{ (fromJSON(format('[{}]', github.run_number))[0] % 3 == 0) }} ||
           ${{ (fromJSON(format('[{}]', github.run_number))[0] % 2 == 0) }}
         )
       ) ||
-      # 当事件类型为 push 时触发
       github.event_name == 'push' ||
-      # 当手动触发且 enable 输入为 true 时触发
       (github.event_name == 'workflow_dispatch' && github.event.inputs.enable == 'true')
     steps:
-      # 克隆仓库步骤
       - name: Clone repository
         uses: actions/checkout@v3
-      # 自动提交以随机填充 2000 - 2024 年热力图的步骤
-      - name: Auto green to randomly fill GitHub heatmap from 2000 to 2024
+
+      - name: Auto green to show pattern in light green from 2000 to 2017
         run: |
           set -e
-          # 配置 Git 用户邮箱
           git config --local user.email ${{ secrets.EMAIL }}
-          # 配置 Git 用户名称
           git config --local user.name ${{ secrets.NAME }}
-          # 设置远程仓库地址
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          # 拉取并变基更新代码
           git pull --rebase
-          # 设置起始日期为 2000 年 1 月 1 日
+          # 2000 年 1 月 1 号作为起始日期
           start_date="2000-01-01"
-          # 计算 2000 年 1 月 1 日到 2024 年 12 月 31 日的总天数
-          total_days=$(( ( $(date -d '2024-12-31' +%s) - $(date -d '2000-01-01' +%s) ) / 86400 + 1 ))
+          # 这里需要根据实际情况重新计算 2000 - 2017 年展示图案的日期偏移量
+          # 假设这里已经有正确计算好的偏移量
+          offsets_pattern=(
+            # 这里填入根据 2000 - 2017 年计算好的偏移量
+          )
+          # 设定全绿区域的提交次数（高频率）
+          full_green_commits=5
+          # 设定图案区域的提交次数（低频率）
+          light_green_commits=1
+          # 计算 2000 年 1 月 1 日到 2017 年 12 月 31 日的总天数
+          total_days=$(( ( $(date -d '2017-12-31' +%s) - $(date -d '2000-01-01' +%s) ) / 86400 + 1 ))
           for ((day = 0; day < total_days; day++)); do
             commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
-            # 随机决定当天的提交次数（0 - 5 次）
-            commit_count=$(( RANDOM % 6 ))
-            for ((i = 0; i < commit_count; i++)); do
-              commit_message="Random commit at $commit_date"
-              GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
-            done
+            if printf '%s\n' "${offsets_pattern[@]}" | grep -qx "$day"; then
+              for ((i = 0; i < light_green_commits; i++)); do
+                commit_message="Show pattern in light green at $commit_date"
+                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
+              done
+            else
+              for ((i = 0; i < full_green_commits; i++)); do
+                commit_message="Keep full green at $commit_date"
+                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
+              done
+            fi
           done
           # 尝试推送，最多重试 3 次
           MAX_RETRIES=3
