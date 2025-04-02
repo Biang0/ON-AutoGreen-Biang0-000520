@@ -1,5 +1,4 @@
 name: ci
-
 on:
   # 手动触发事件
   workflow_dispatch:
@@ -18,17 +17,16 @@ on:
   schedule:
     # 每 15 分钟尝试触发一次，一天有 96 个 15 分钟的时间段
     - cron: "*/15 * * * *"
-
 jobs:
   autogreen:
     runs-on: ubuntu-latest
-    # 检查是否满足触发条件
+    # 检查是否满足触发条件，修正条件判断语法
     if: |
-      (github.event_name == 'schedule' &&
+      (github.event_name =='schedule' &&
         (
-          "`expr ${{ github.run_number }} % 4`" == "0" ||
-          "`expr ${{ github.run_number }} % 3`" == "0" ||
-          "`expr ${{ github.run_number }} % 2`" == "0"
+          $(( github.run_number % 4 )) == 0 ||
+          $(( github.run_number % 3 )) == 0 ||
+          $(( github.run_number % 2 )) == 0
         )
       ) ||
       github.event_name == 'push' ||
@@ -36,28 +34,41 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v3
-
       - name: Auto green to show 2024 in dark green in 2024
         run: |
+          # 明确指定bash shell，确保脚本执行环境一致
+          #!/bin/bash
           set -e
+          # 固定区域设置，避免date命令因区域差异产生兼容性问题
+          LC_ALL=C
           git config --local user.email ${{ secrets.EMAIL }}
           git config --local user.name ${{ secrets.NAME }}
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git pull --rebase
-          # 2024 年 1 月 1 号作为起始日期
+          # 增加git pull的重试机制，应对网络波动等问题
+          max_retries=3
+          retry_count=0
+          while [ $retry_count -lt $max_retries ]; do
+            if git pull --rebase; then
+              break
+            else
+              echo "git pull failed, retry $((retry_count + 1))"
+              ((retry_count++))
+              sleep 5
+            fi
+          done
+          if [ $retry_count -eq $max_retries ]; then
+            echo "Failed to git pull after $max_retries attempts. Exiting."
+            exit 1
+          fi
           start_date="2024-01-01"
-          # 定义 2024 图案的日期偏移量，根据 1 月 1 日在左 1 竖第二行，1 月 6 日在左 1 竖最后 1 行第 7 行调整
           offsets_2024=(
             # 20
             0 1 2 7 8 9 14 15 16 21 22 23 28 29 30 35 36 37 42 43 44 49 50 51 56 57 58 63 64 65 70 71 72 77 78 79 84 85 86 91 92 93 98 99 100 105 106 107 112 113 114 119 120 121 126 127 128
             # 24
             133 134 135 140 141 142 147 148 149 154 155 156 161 162 163 168 169 170 175 176 177 182 183 184 189 190 191 196 197 198 203 204 205 210 211 212 217 218 219 224 225 226 231 232 233 238 239 240 245 246 247 252 253 254 259 260 261 266 267 268
           )
-          # 设定全绿区域的提交次数（低频率）
           full_green_commits=1
-          # 设定 2024 区域的提交次数（高频率）
           dark_green_commits=5
-          # 2024 年总天数
           total_days=366
           for ((day = 0; day < total_days; day++)); do
             commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
@@ -65,7 +76,10 @@ jobs:
               echo "Committing $dark_green_commits times for 2024 pattern at $commit_date"
               for ((i = 0; i < dark_green_commits; i++)); do
                 commit_message="Show 2024 in dark green at $commit_date"
-                if ! GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"; then
+                # 记录每次提交操作的结果，方便排查问题
+                if GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"; then
+                  echo "Commit succeeded at $commit_date"
+                else
                   echo "Error: Commit failed at $commit_date"
                 fi
               done
@@ -73,13 +87,28 @@ jobs:
               echo "Committing $full_green_commits times for full green at $commit_date"
               for ((i = 0; i < full_green_commits; i++)); do
                 commit_message="Keep light green at $commit_date"
-                if ! GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"; then
+                if GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"; then
+                  echo "Commit succeeded at $commit_date"
+                else
                   echo "Error: Commit failed at $commit_date"
                 fi
               done
             fi
           done
           echo "Pushing commits to remote repository"
-          if ! git push; then
-            echo "Error: Push failed"
-          fi    
+          # 增加git push的重试机制
+          push_retries=3
+          push_retry_count=0
+          while [ $push_retry_count -lt $push_retries ]; do
+            if git push; then
+              break
+            else
+              echo "git push failed, retry $((push_retry_count + 1))"
+              ((push_retry_count++))
+              sleep 5
+            fi
+          done
+          if [ $push_retry_count -eq $push_retries ]; then
+            echo "Failed to git push after $push_retries attempts. Exiting."
+            exit 1
+          fi
