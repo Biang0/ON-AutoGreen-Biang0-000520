@@ -1,48 +1,68 @@
-name: GitHub Heatmap - 2020 (Year)
+name: GitHub Heatmap - 2019 & 2021 (Closed 0)
 
 on:
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   heatmap:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Generate "2020" pattern on 2020 heatmap
+      - name: Generate closed 0 pattern
         run: |
           set -e
-          git config --local user.email "wangyuan0999@gmail.com"
-          git config --local user.name "Biang0"
+          git config --local user.email "youremail@example.com"
+          git config --local user.name "Your Name"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git pull --rebase
+          git pull --rebase --autostash
 
-          # 2020年1月1日是星期三，所以要适配 GitHub 的周日对齐
-          start_date="2019-12-29"  # 让2020年的热力图从正确的周日开始
+          # 2020年热力图参数
+          start_date="2020-01-05"  # 第一个完整周的周日
+          total_weeks=53
 
-          # "2020" 点阵 (7x53)，1表示有提交
-          pattern=(
-            "01110001111000111100000000000000000000000000000000000000000000000"
-            "01001001001001000010000000000000000000000000000000000000000000000"
-            "01000001000001000010000000000000000000000000000000000000000000000"
-            "01000001110001000010000000000000000000000000000000000000000000000"
-            "01000000001001000010000000000000000000000000000000000000000000000"
-            "01001001001001000010000000000000000000000000000000000000000000000"
-            "01110001111000111100000000000000000000000000000000000000000000000"
+          # 闭合式七段数码管矩阵
+          digits=(
+            "01110\n00010\n01110\n01000\n01110"  # 2
+            "01110\n01010\n01010\n01010\n01110"  # 0（闭合）
+            "00010\n00010\n00010\n00010\n00010"  # 1
+            "01110\n01000\n01110\n01000\n01110"  # 9
+            "01110\n00010\n01110\n01000\n01110"  # 2（后半年）
+            "00010\n00010\n00010\n00010\n00010"  # 1（后半年）
           )
 
-          # 生成提交
-          for week in {0..52}; do
-            for day in {0..6}; do
-              if [ "${pattern[$day]:$week:1}" == "1" ]; then
-                commit_date=$(date -d "$start_date +$((week * 7 + day)) days" +"%Y-%m-%d %H:%M:%S")
-                echo "Committing 5 times on $commit_date"
-                for i in {1..5}; do  # 每个绿色点提交 5 次
-                  GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Draw 2020 at $commit_date (commit $i)" --date "$commit_date"
-                done
-              fi
-            done
-          done
+          # 组合数字图案
+          pattern_2019=("${digits[0]} ${digits[1]} ${digits[2]} ${digits[3]}")
+          pattern_2021=("${digits[4]} ${digits[1]} ${digits[4]} ${digits[5]}")
 
-          git push
+          # 生成提交函数
+          generate_pattern() {
+            local pattern=$1
+            local start_week=$2
+            local year=$3
+            local -a rows=($(echo "$pattern" | tr ' ' '\n'))
+            
+            for ((week=0; week<26; week++)); do
+              for ((day=0; day<7; day++)); do
+                local pos=$((week*6 + day))
+                if [[ "${rows[day]:pos:1}" == "1" ]]; then
+                  commit_date=$(date -d "$start_date +$((start_week + week)) weeks +$day days" +"%Y-%m-%d %H:%M:%S")
+                  echo "Generating $year commit: $commit_date"
+                  for i in {1..30}; do
+                    GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Draw $year at $commit_date (commit $i)" --date "$commit_date"
+                  done
+                fi
+              done
+            done
+          }
+
+          # 生成2019（周1-26）
+          generate_pattern "$pattern_2019" 0 2019
+
+          # 生成2021（周27-52）
+          generate_pattern "$pattern_2021" 26 2021
+
+          git push --force-with-lease
