@@ -1,7 +1,5 @@
-name: ci
-
+name: GitHub Heatmap - 2021 in Dark Green
 on:
-  # 手动触发事件
   workflow_dispatch:
     inputs:
       enable:
@@ -12,78 +10,63 @@ on:
         options:
           - 'true'
           - 'false'
-  push:
-    branches:
-      - master
-  schedule:
-    # 每 15 分钟尝试触发一次，一天有 96 个 15 分钟的时间段
-    - cron: "*/15 * * * *"
 
 jobs:
   autogreen:
     runs-on: ubuntu-latest
-    # 检查是否满足触发条件
-    if: |
-      (github.event_name == 'schedule' &&
-        (
-          ${{ (fromJSON(format('[{}]', github.run_number))[0] % 4 == 0) }} ||
-          ${{ (fromJSON(format('[{}]', github.run_number))[0] % 3 == 0) }} ||
-          ${{ (fromJSON(format('[{}]', github.run_number))[0] % 2 == 0) }}
-        )
-      ) ||
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.enable == 'true')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.enable == 'true'
+    permissions:
+      contents: write  # 关键权限
     steps:
       - name: Clone repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # 升级至最新版本
 
-      - name: Auto green to show pattern in light green in 2022
+      - name: Generate 2021 contribution graph
         run: |
           set -e
           git config --local user.email ${{ secrets.EMAIL }}
           git config --local user.name ${{ secrets.NAME }}
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git pull --rebase
-          # 2022 年 1 月 1 号作为起始日期
-          start_date="2022-01-01"
-          # 这里需要根据实际情况重新计算 2022 年展示图案的日期偏移量
-          # 假设这里已经有正确计算好的偏移量
-          offsets_pattern=(
-            # 这里填入根据 2022 年计算好的偏移量
+          git pull --rebase --autostash
+
+          # 2021年参数（第一个完整周的周日）
+          start_date="2021-01-03"
+          total_weeks=52
+
+          # 数码管字符矩阵（7天×5周）
+          characters=(
+            "11111\n00001\n11111\n10000\n11111"  # 2
+            "11111\n10001\n10001\n10001\n11111"  # 0
+            "00100\n00100\n00100\n00100\n00100"  # 1
+            "11111\n10001\n11111\n10001\n11111"  # 8（备用）
           )
-          # 设定全绿区域的提交次数（高频率）
-          full_green_commits=5
-          # 设定图案区域的提交次数（低频率）
-          light_green_commits=1
-          # 计算 2022 年的总天数
-          total_days=365
-          for ((day = 0; day < total_days; day++)); do
-            commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
-            if printf '%s\n' "${offsets_pattern[@]}" | grep -qx "$day"; then
-              for ((i = 0; i < light_green_commits; i++)); do
-                commit_message="Show pattern in light green at $commit_date"
-                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
+
+          # 组合字符：2021
+          pattern="
+            ${characters[0]} ${characters[1]} ${characters[0]} ${characters[2]}
+          "
+
+          generate_heatmap() {
+            local -a rows=($(echo "$pattern" | tr '\n' ' '))
+            local char_start_week=0
+
+            for ((char=0; char<${#rows[@]}; char++)); do
+              local char_data="${rows[char]}"
+              for ((day=0; day<7; day++)); do  # 横轴：周日(0)到周六(6)
+                for ((week=0; week<5; week++)); do  # 竖轴：周数
+                  local pos=$((week*7 + day))
+                  if [[ "${char_data:pos:1}" == "1" ]]; then
+                    commit_date=$(date -d "$start_date +$((char_start_week + week)) weeks +$day days" +"%Y-%m-%dT09:00:00Z")
+                    [[ "$commit_date" > "2021-12-31" ]] && break  # 防止超出2021年
+                    for i in {1..30}; do  # 提交30次确保深绿色
+                      GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "2021" --date "$commit_date"
+                    done
+                  fi
+                done
               done
-            else
-              for ((i = 0; i < full_green_commits; i++)); do
-                commit_message="Keep full green at $commit_date"
-                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
-              done
-            fi
-          done
-          # 尝试推送，最多重试 3 次
-          MAX_RETRIES=3
-          RETRY_COUNT=0
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if git push; then
-              break
-            else
-              echo "Push failed. Retrying in 5 seconds..."
-              sleep 5
-              RETRY_COUNT=$((RETRY_COUNT + 1))
-            fi
-          done
-          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-            echo "Failed to push after $MAX_RETRIES attempts."
-            exit 1
-          fi    
+              char_start_week=$((char_start_week + 5))
+            done
+          }
+
+          generate_heatmap
+          git push --force-with-lease
