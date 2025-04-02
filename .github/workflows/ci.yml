@@ -1,88 +1,53 @@
-name: ci
+name: GitHub Heatmap - I LOVE YOU
 
 on:
-  # 手动触发事件
-  workflow_dispatch:
-    inputs:
-      enable:
-        description: "启用或禁用自动 GitHub 自动全绿功能"
-        required: true
-        default: 'true'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
+  workflow_dispatch:  # 允许手动触发
   push:
     branches:
       - master
   schedule:
-    # 每 15 分钟尝试触发一次，一天有 96 个 15 分钟的时间段
-    - cron: "*/15 * * * *"
+    - cron: "0 0 * * 0"  # 每周日运行一次
 
 jobs:
-  autogreen:
+  heatmap:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
         uses: actions/checkout@v3
 
-      - name: Check trigger conditions
-        id: check
-        run: |
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            if (( $(( ${{ github.run_number }} % 4 )) == 0 )) || \
-               (( $(( ${{ github.run_number }} % 3 )) == 0 )) || \
-               (( $(( ${{ github.run_number }} % 2 )) == 0 )); then
-              echo "run_job=true" >> $GITHUB_ENV
-            else
-              echo "run_job=false" >> $GITHUB_ENV
-            fi
-          elif [[ "${{ github.event_name }}" == "push" ]] || \
-               [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.enable }}" == "true" ]]; then
-            echo "run_job=true" >> $GITHUB_ENV
-          else
-            echo "run_job=false" >> $GITHUB_ENV
-          fi
-
-      - name: Run Auto Green
-        if: ${{ env.run_job == 'true' }}
+      - name: Generate "I LOVE YOU" pattern on heatmap
         run: |
           set -e
-          git config --local user.email "${{ secrets.EMAIL }}"
-          git config --local user.name "${{ secrets.NAME }}"
+          git config --local user.email "youremail@example.com"
+          git config --local user.name "Your Name"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
 
-          # 2020 年 1 月 1 日作为起始日期
-          start_date="2020-01-01"
+          # 2023年1月1日是星期日
+          start_date="2023-01-01"
 
-          # 定义 2020 文字图案的日期偏移量（调整以均匀分布在全年）
-          offsets_2020=(
-            2 3 4 5 6 9 16 23 30 37 44 51 58 65 72 79 86 93 100 107 114 121
-            128 135 142 149 156 163 170 177 184 191 198 205 212 219 226 233 240 247
-            254 261 268 275 282 289 296 303 310 317 324 331 338 345 352 359
+          # "I LOVE YOU" 点阵 (7x53)
+          pattern=(
+            "0000001000000000000000000000000000000000000000000000000000000"
+            "0000001000000000100000001000000000010000001000010000010000000"
+            "0000001000000000100000001000000000010000001000010000010000000"
+            "0000001000000000111100001000000000010000001000010000010000000"
+            "0000001000000000100000001000000000010000001000010000010000000"
+            "0000001000000000100000001000000000010000001000010000010000000"
+            "0000001000000000000000000000000000000000000000000000000000000"
           )
 
-          # 设定提交次数
-          commits_per_pixel=10
-          total_days=366  # 2020 年是闰年
-
-          for day in "${offsets_2020[@]}"; do
-            commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
-            for ((i = 0; i < commits_per_pixel; i++)); do
-              commit_message="Show 2020 on GitHub graph at $commit_date"
-              GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
+          # 生成提交
+          for week in {0..52}; do
+            for day in {0..6}; do
+              if [ "${pattern[$day]:$week:1}" == "1" ]; then
+                commit_date=$(date -d "$start_date +$((week * 7 + day)) days" +"%Y-%m-%d %H:%M:%S")
+                echo "Committing 5 times on $commit_date"
+                for i in {1..5}; do  # 每个绿色点提交 5 次
+                  GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Draw I LOVE YOU at $commit_date (commit $i)" --date "$commit_date"
+                done
+              fi
             done
           done
 
           git push
-
-主要修改：
-
-修正了 if 语句的条件检查部分，确保正确判断 run_job。
-
-if 语句改为 if: ${{ env.run_job == 'true' }}，修正了语法问题。
-
-
-请将此修正后的文件更新到 .github/workflows/ci.yml，并再次进行尝试。如果问题依旧，请告诉我具体错误信息。
-
