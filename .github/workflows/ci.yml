@@ -5,6 +5,8 @@ on:
 jobs:
   heatmap:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 关键权限
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -14,14 +16,21 @@ jobs:
       - name: Generate 2010 Pattern
         run: |
           set -e
-          git config --local user.email "wangyuan0999@gmail.com"
-          git config --local user.name "Biang0"
+          git config --local user.email "your_email@example.com"
+          git config --local user.name "Your Name"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase --autostash
           
           # 2010年参数（2010-01-03为第一个完整周的周日）
           start_date="2010-01-03"
           total_weeks=52
+
+          # 数码管字符矩阵（7天×5周）
+          characters=(
+            "11111\n00001\n11111\n10000\n11111"  # 2
+            "11111\n10001\n10001\n10001\n11111"  # 0
+            "00100\n00100\n00100\n00100\n00100"  # 1
+          )
 
           # 组合字符：2010
           pattern="
@@ -36,11 +45,11 @@ jobs:
               local char_data="${rows[char]}"
               for ((week=0; week<5; week++)); do  # 每个字符占5周
                 for ((day=0; day<7; day++)); do  # 每天对应7天
-                  local pos=$((week*5 + day))
+                  local pos=$((week*7 + day))  # 修正行列映射
                   if [[ "${char_data:pos:1}" == "1" ]]; then
                     commit_date=$(date -d "$start_date +$((char_start_week + week)) weeks +$day days" +"%Y-%m-%dT09:00:00Z")
                     [[ "$commit_date" > "2010-12-31" ]] && break  # 防止跨年
-                    for i in {1..30}; do  # 深绿色区域提交30次
+                    for i in {1..50}; do  # 增加提交次数到50次
                       GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "2010" --date "$commit_date"
                     done
                   fi
@@ -59,7 +68,7 @@ jobs:
                 GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "2010 Background" --date "$commit_date"
               done
             done
-          done
+          }
 
           generate_heatmap
           git push --force-with-lease
