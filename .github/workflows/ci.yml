@@ -1,37 +1,27 @@
-name: Dragon Heatmap
+name: Love Heatmap
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: "0 0 * * *"  # 每天触发
+on: workflow_dispatch: push: branches: - main schedule: - cron: "0 0 * * *"  # 每天触发
 
-jobs:
-  draw_dragon:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+jobs: draw_love: runs-on: ubuntu-latest steps: - name: Checkout repository uses: actions/checkout@v3
 
-      - name: Configure Git
-        run: |
-          git config --local user.email "${{ secrets.EMAIL }}"
-          git config --local user.name "${{ secrets.NAME }}"
-          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+- name: Configure Git
+    run: |
+      git config --local user.email "${{ secrets.EMAIL }}"
+      git config --local user.name "${{ secrets.NAME }}"
+      git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-      - name: Draw the dragon on GitHub heatmap
-        run: |
-          set -e
-          start_date="2021-01-01"  # 选择绘制年份
-          offsets_dragon=(35 29 36 43 92 23 30 37 44 51 86 93 100 17 24 31 38 45 52 59 80 87 94 101 108 39 46 53 60 67 74 81 88 95 102 109 47 54 61 68 75 82 89 96 103 110 55 62 69 76 83 90 97 104 111)
-          commit_times=10  # 亮度控制
-          
-          for offset in "${offsets_dragon[@]}"; do
-            commit_date=$(date -d "$start_date + $offset days" +'%Y-%m-%d %H:%M:%S')
-            for ((i = 0; i < commit_times; i++)); do
-              GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Drawing a dragon on $commit_date" --date "$commit_date"
-            done
-          done
-          git push
+  - name: Draw 'I ❤️ YOU' on GitHub heatmap
+    run: |
+      set -e
+      start_date="2021-01-01"  # 选择绘制年份
+      offsets_love=(0 56 84 91 98 119 126 133 175 231 1 57 78 106 120 148 176 218 2 58 79 128 184 212 3 17 24 31 38 59 80 129 192 206 4 60 81 130 200 5 61 82 110 124 152 6 13 20 27 34 62 90 97 104 125 132 139 216)
+      commit_times=15  # 提高亮度
+      
+      for offset in "${offsets_love[@]}"; do
+        commit_date=$(date -d "$start_date + $offset days" +'%Y-%m-%d %H:%M:%S')
+        for ((i = 0; i < commit_times; i++)); do
+          GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Drawing 'I ❤️ YOU' on $commit_date" --date "$commit_date"
+        done
+      done
+      git push
+
