@@ -63,15 +63,21 @@ jobs:
               echo "Committing $dark_green_commits times for 2023 pattern at $commit_date"
               for ((i = 0; i < dark_green_commits; i++)); do
                 commit_message="Show 2023 in dark green at $commit_date"
-                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
+                if ! GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"; then
+                  echo "Error: Commit failed at $commit_date"
+                fi
               done
             else
               echo "Committing $full_green_commits times for full green at $commit_date"
               for ((i = 0; i < full_green_commits; i++)); do
                 commit_message="Keep light green at $commit_date"
-                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
+                if ! GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"; then
+                  echo "Error: Commit failed at $commit_date"
+                fi
               done
             fi
           done
           echo "Pushing commits to remote repository"
-          git push    
+          if ! git push; then
+            echo "Error: Push failed"
+          fi    
