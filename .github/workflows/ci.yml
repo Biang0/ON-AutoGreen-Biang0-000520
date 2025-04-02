@@ -10,18 +10,9 @@ jobs: draw_love: runs-on: ubuntu-latest steps: - name: Checkout repository uses:
       git config --local user.name "${{ secrets.NAME }}"
       git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-  - name: Draw 'I ❤️ YOU' on GitHub heatmap
+  - name: Draw 'I LOVE YOU' on GitHub heatmap
     run: |
       set -e
       start_date="2021-01-01"  # 选择绘制年份
-      offsets_love=(10 17 24 31 38 45 52 59 66 73 80 87 94 101 108 115 122 129 136 143 150 157 164 171 178 185 192 199 206 213 220 227 234 241 248 255 262 269 276 283 290 297 304 311 318 325 332 339 346 353)
-      commit_times=10  # 亮度控制
-      
-      for offset in "${offsets_love[@]}"; do
-        commit_date=$(date -d "$start_date + $offset days" +'%Y-%m-%d %H:%M:%S')
-        for ((i = 0; i < commit_times; i++)); do
-          GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Drawing 'I ❤️ YOU' on $commit_date" --date "$commit_date"
-        done
-      done
-      git push
+      offsets_love=(10
 
