@@ -14,8 +14,8 @@ jobs:
       - name: Generate Pattern
         run: |
           set -e
-          git config --local user.email "your_email@example.com"
-          git config --local user.name "Your Name"
+          git config --local user.email "wangYuan0999@gmail.com"
+          git config --local user.name "Biang0"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase --autostash
           
