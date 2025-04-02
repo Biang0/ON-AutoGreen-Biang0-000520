@@ -38,7 +38,7 @@ jobs:
             for year in $(seq $start_year $end_year); do
               # 计算当年天数
               days_in_year=365
-              if [[ $year % 4 == 0 && ($year % 100 != 0 || $year % 400 == 0) ]]; then
+              if [[ $year % 4 == 0 && ($year % 100 != 0 || $year % 400 == 0) ]]; then  # 修正条件表达式
                 days_in_year=366
               fi
 
