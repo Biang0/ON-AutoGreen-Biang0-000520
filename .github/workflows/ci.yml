@@ -1,4 +1,4 @@
-name: GitHub Heatmap - I LOVE YOU (2020)
+name: GitHub Heatmap - 2020 (Year)
 
 on:
   workflow_dispatch:  # 允许手动触发
@@ -10,7 +10,7 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v3
 
-      - name: Generate "I LOVE YOU" pattern on 2020 heatmap
+      - name: Generate "2020" pattern on 2020 heatmap
         run: |
           set -e
           git config --local user.email "wangyuan0999@gmail.com"
@@ -18,18 +18,18 @@ jobs:
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
 
-          # 2020年1月1日是星期三，所以要适配GitHub的周日对齐
+          # 2020年1月1日是星期三，所以要适配 GitHub 的周日对齐
           start_date="2019-12-29"  # 让2020年的热力图从正确的周日开始
 
-          # "I LOVE YOU" 点阵 (7x53)，1表示有提交
+          # "2020" 点阵 (7x53)，1表示有提交
           pattern=(
-            "01100000000010000111000100001000001110000001110001110000000000000"
-            "01000000000010000101000100001000001001000001001001001000000000000"
-            "01000000000010000101000100001000001001000001001001001000000000000"
-            "01100000000010000111000100001000001001000001001001110000000000000"
-            "00000000000010000101000100001000001001000001001001001000000000000"
-            "00000000000010000101000100001000001001000001001001001000000000000"
-            "00000000000001100011000001100001110000001100001001000000000000000"
+            "01110001111000111100000000000000000000000000000000000000000000000"
+            "01001001001001000010000000000000000000000000000000000000000000000"
+            "01000001000001000010000000000000000000000000000000000000000000000"
+            "01000001110001000010000000000000000000000000000000000000000000000"
+            "01000000001001000010000000000000000000000000000000000000000000000"
+            "01001001001001000010000000000000000000000000000000000000000000000"
+            "01110001111000111100000000000000000000000000000000000000000000000"
           )
 
           # 生成提交
@@ -39,7 +39,7 @@ jobs:
                 commit_date=$(date -d "$start_date +$((week * 7 + day)) days" +"%Y-%m-%d %H:%M:%S")
                 echo "Committing 5 times on $commit_date"
                 for i in {1..5}; do  # 每个绿色点提交 5 次
-                  GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Draw I LOVE YOU at $commit_date (commit $i)" --date "$commit_date"
+                  GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Draw 2020 at $commit_date (commit $i)" --date "$commit_date"
                 done
               fi
             done
