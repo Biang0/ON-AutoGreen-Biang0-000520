@@ -45,7 +45,7 @@ jobs:
           fi
 
       - name: Run Auto Green
-        if: env.run_job == 'true'
+        if: ${{ env.run_job == 'true' }}
         run: |
           set -e
           git config --local user.email "${{ secrets.EMAIL }}"
@@ -77,26 +77,12 @@ jobs:
 
           git push
 
-修正点：
+主要修改：
 
-1. 修正 if 语法错误
+修正了 if 语句的条件检查部分，确保正确判断 run_job。
 
-使用 run 步骤判断 schedule 触发时的 run_number % X 逻辑。
-
-通过 env.run_job 变量控制是否运行提交逻辑。
+if 语句改为 if: ${{ env.run_job == 'true' }}，修正了语法问题。
 
 
-
-2. 优化 2020 图案
-
-让 2020 分布均匀，使其在 GitHub 贡献热力图上完整显示。
-
-offsets_2020 数组代表日期偏移量，每个数值对应一年中的一天。
-
-代码会在这些天提交 10 次，确保这些位置的颜色加深，形成“2020”字样。
-
-
-
-
-你可以将这段代码替换 .github/workflows/ci.yml 试试看！如果有任何问题，欢迎反馈。
+请将此修正后的文件更新到 .github/workflows/ci.yml，并再次进行尝试。如果问题依旧，请告诉我具体错误信息。
 
