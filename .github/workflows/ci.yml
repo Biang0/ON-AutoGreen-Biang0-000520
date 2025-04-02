@@ -22,17 +22,17 @@ jobs: autogreen: runs-on: ubuntu-latest if: > (github.event_name == 'schedule' &
       commit_count=5
 
       for offset in "${offsets_2020[@]}"; do
-        commit_date=$(date -d "$start_date + $offset days" +'%Y-%m-%d %H:%M:%S')
+        commit_date=$(date -d "$start_date + $offset days" +'%Y-%m-%dT%H:%M:%S')
         for ((i = 0; i < commit_count; i++)); do
-          GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Show 2020 at $commit_date" --date "$commit_date"
+          GIT_COMMITTER_DATE="$commit_date" GIT_AUTHOR_DATE="$commit_date" git commit --allow-empty -m "Show 2020 at $commit_date" --date "$commit_date"
         done
       done
 
       for offset in "${offsets_2020[@]}"; do
         new_offset=$((offset + 182))
-        commit_date=$(date -d "$start_date + $new_offset days" +'%Y-%m-%d %H:%M:%S')
+        commit_date=$(date -d "$start_date + $new_offset days" +'%Y-%m-%dT%H:%M:%S')
         for ((i = 0; i < commit_count; i++)); do
-          GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Show 2020 at $commit_date" --date "$commit_date"
+          GIT_COMMITTER_DATE="$commit_date" GIT_AUTHOR_DATE="$commit_date" git commit --allow-empty -m "Show 2020 at $commit_date" --date "$commit_date"
         done
       done
 
