@@ -37,36 +37,34 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v3
 
-      - name: Auto green to show 2021 in dark green in 2021
+      - name: Auto green to show 2024 in dark green in 2024
         run: |
           set -e
           git config --local user.email ${{ secrets.EMAIL }}
           git config --local user.name ${{ secrets.NAME }}
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
-          # 2021 年 1 月 1 号作为起始日期
-          start_date="2021-01-01"
-          # 定义 2021 图案的日期偏移量，根据12月31日在最右边第6个位置调整
-          offsets_2021=(
-            # 这里需要你根据实际布局精确计算每个数字
-            # 示例：假设图案从1月1日开始
-            0 1 2 3 4 5 
-            # 下面是根据12月31日在最右边第6个位置的部分偏移量示例
-            358 359 360 361 362 363 364
-            # 你需要根据实际情况补充完整“2021”图案的偏移量
+          # 2024 年 1 月 1 号作为起始日期
+          start_date="2024-01-01"
+          # 定义 2024 图案的日期偏移量，根据 1 月 1 日在左 1 竖第二行，1 月 6 日在左 1 竖最后 1 行第 7 行调整
+          offsets_2024=(
+            # 20
+            0 1 2 7 8 9 14 15 16 21 22 23 28 29 30 35 36 37 42 43 44 49 50 51 56 57 58 63 64 65 70 71 72 77 78 79 84 85 86 91 92 93 98 99 100 105 106 107 112 113 114 119 120 121 126 127 128
+            # 24
+            133 134 135 140 141 142 147 148 149 154 155 156 161 162 163 168 169 170 175 176 177 182 183 184 189 190 191 196 197 198 203 204 205 210 211 212 217 218 219 224 225 226 231 232 233 238 239 240 245 246 247 252 253 254 259 260 261 266 267 268
           )
           # 设定全绿区域的提交次数（低频率）
           full_green_commits=1
-          # 设定 2021 区域的提交次数（高频率）
+          # 设定 2024 区域的提交次数（高频率）
           dark_green_commits=5
-          # 2021 年总天数
-          total_days=365
+          # 2024 年总天数
+          total_days=366
           for ((day = 0; day < total_days; day++)); do
             commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
-            if printf '%s\n' "${offsets_2021[@]}" | grep -qx "$day"; then
-              echo "Committing $dark_green_commits times for 2021 pattern at $commit_date"
+            if printf '%s\n' "${offsets_2024[@]}" | grep -qx "$day"; then
+              echo "Committing $dark_green_commits times for 2024 pattern at $commit_date"
               for ((i = 0; i < dark_green_commits; i++)); do
-                commit_message="Show 2021 in dark green at $commit_date"
+                commit_message="Show 2024 in dark green at $commit_date"
                 if ! GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"; then
                   echo "Error: Commit failed at $commit_date"
                 fi
