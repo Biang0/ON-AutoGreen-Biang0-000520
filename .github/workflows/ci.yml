@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       enable:
-        description: "启用或禁用自动显示 I Love You 功能"
+        description: "启用或禁用自动显示 2023 功能"
         required: true
         default: 'true'
         type: choice
@@ -39,13 +39,17 @@ jobs:
       - name: Generate and push commits
         run: |
           start_date="2023-01-01"
+          # 更新后的 "2023" 图案日期偏移量
           offsets=(
-            2 9 16 28 29 30 31 32 39 46 57 58 59 60 65 66 67 72 73 74 81 88 95 105 106 107 112 113 114 121 128 135 145 146 147 152 153 154 161 168 175 185 186 187 192 193 194 201 208 215
+            1 2 3 4 5 8 15 22 29 30 31 32 33 26 19 12
+            43 44 45 46 47 50 57 64 71 72 73 74 75
+            85 86 87 88 89 92 99 106 107 108 109 110 103 96
+            113 114 115 116 117 120 127 134 135 136 137 130 123 124
           )
-          for offset in "${offsets[@]}"; do
+          for offset in "${offsets[@]}":
             # 明确使用 bash 来执行命令，确保兼容性
             commit_date=$(bash -c 'date -d "$0 + $1 days" +"%Y-%m-%d %H:%M:%S"' "$start_date" "$offset")
-            commit_message="Show 'I Love You' at $commit_date"
+            commit_message="Show '2023' at $commit_date"
             GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
           done
           git push -u origin HEAD  # 推送并设置上游分支
