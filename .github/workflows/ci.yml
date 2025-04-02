@@ -30,10 +30,10 @@ jobs:
     if: |
       (github.event_name == 'schedule' &&
         (
-          # 使用 format 函数处理取模运算
-          ${{ fromJSON(format('[{}]', github.run_number))[0] % 4 == 0 }} ||
-          ${{ fromJSON(format('[{}]', github.run_number))[0] % 3 == 0 }} ||
-          ${{ fromJSON(format('[{}]', github.run_number))[0] % 2 == 0 }}
+          # 使用 JavaScript 表达式实现取模运算
+          ${{ (fromJSON(format('[{}]', github.run_number))[0] % 4 == 0) }} ||
+          ${{ (fromJSON(format('[{}]', github.run_number))[0] % 3 == 0) }} ||
+          ${{ (fromJSON(format('[{}]', github.run_number))[0] % 2 == 0) }}
         )
       ) ||
       # 当事件类型为 push 时触发
