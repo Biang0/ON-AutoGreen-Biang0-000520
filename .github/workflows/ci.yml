@@ -37,7 +37,7 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v3
 
-      - name: Auto green to show 2025 in light green after April 2nd, 2025
+      - name: Auto green to show 2025 in light green after July 17th, 2022
         run: |
           set -e
           git config --local user.email ${{ secrets.EMAIL }}
@@ -45,8 +45,8 @@ jobs:
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
 
-          # 2025 年 4 月 2 号作为起始日期
-          start_date="2025-04-02"
+          # 2022 年 7 月 17 号作为起始日期
+          start_date="2022-07-17"
           # 定义 2025 图案的日期偏移量
           offsets_2025=(
             1 2 3 4 5 8 15 22 29 30 31 32 33 26 19 12
