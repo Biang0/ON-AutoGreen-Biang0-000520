@@ -1,4 +1,4 @@
-name: GitHub Heatmap - 2019 & 2021 (Closed 0)
+name: GitHub Heatmap - 2019 & 2021 (Closed 9)
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate closed 0 pattern
+      - name: Generate custom pattern
         run: |
           set -e
           git config --local user.email "youremail@example.com"
@@ -24,19 +24,18 @@ jobs:
           start_date="2020-01-05"  # 第一个完整周的周日
           total_weeks=53
 
-          # 闭合式七段数码管矩阵
+          # 自定义数字矩阵
           digits=(
-            "01110\n00010\n01110\n01000\n01110"  # 2
-            "01110\n01010\n01010\n01010\n01110"  # 0（闭合）
-            "00010\n00010\n00010\n00010\n00010"  # 1
-            "01110\n01000\n01110\n01000\n01110"  # 9
-            "01110\n00010\n01110\n01000\n01110"  # 2（后半年）
-            "00010\n00010\n00010\n00010\n00010"  # 1（后半年）
+            "11111\n00010\n11111\n10000\n11111"  # 2（非全闭合）
+            "11111\n10001\n10001\n10001\n11111"  # 0（全闭合）
+            "00100\n00100\n00100\n00100\n00100"  # 1（全闭合）
+            "11111\n10001\n11111\n10001\n11111"  # 9（全闭合）
+            "00100\n00100\n00100\n00100\n00100"  # 1（后半年）
           )
 
           # 组合数字图案
-          pattern_2019=("${digits[0]} ${digits[1]} ${digits[2]} ${digits[3]}")
-          pattern_2021=("${digits[4]} ${digits[1]} ${digits[4]} ${digits[5]}")
+          pattern_2019=("${digits[0]} ${digits[1]} ${digits[2]} ${digits[3]}")  # 2019
+          pattern_2021=("${digits[0]} ${digits[1]} ${digits[0]} ${digits[4]}")  # 2021
 
           # 生成提交函数
           generate_pattern() {
@@ -47,7 +46,7 @@ jobs:
             
             for ((week=0; week<26; week++)); do
               for ((day=0; day<7; day++)); do
-                local pos=$((week*6 + day))
+                local pos=$((week*5 + day))
                 if [[ "${rows[day]:pos:1}" == "1" ]]; then
                   commit_date=$(date -d "$start_date +$((start_week + week)) weeks +$day days" +"%Y-%m-%d %H:%M:%S")
                   echo "Generating $year commit: $commit_date"
