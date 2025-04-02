@@ -1,7 +1,9 @@
+# 工作流名称
 name: ci
 
+# 触发事件
 on:
-  # 手动触发事件
+  # 手动触发工作流
   workflow_dispatch:
     inputs:
       enable:
@@ -12,41 +14,54 @@ on:
         options:
           - 'true'
           - 'false'
+  # 当代码推送到 master 分支时触发
   push:
     branches:
       - master
+  # 定时触发，每 15 分钟尝试触发一次
   schedule:
-    # 每 15 分钟尝试触发一次，一天有 96 个 15 分钟的时间段
     - cron: "*/15 * * * *"
 
+# 定义工作
 jobs:
   autogreen:
+    # 指定运行环境
     runs-on: ubuntu-latest
     # 检查是否满足触发条件
     if: |
       (github.event_name == 'schedule' &&
         (
+          # 判断 github.run_number 是否能被 4 整除
           ${{ fromJSON(format('[{}]', github.run_number))[0] % 4 == 0 }} ||
+          # 判断 github.run_number 是否能被 3 整除
           ${{ fromJSON(format('[{}]', github.run_number))[0] % 3 == 0 }} ||
+          # 判断 github.run_number 是否能被 2 整除
           ${{ fromJSON(format('[{}]', github.run_number))[0] % 2 == 0 }}
         )
       ) ||
+      # 当事件类型为 push 时触发
       github.event_name == 'push' ||
+      # 当手动触发且 enable 输入为 true 时触发
       (github.event_name == 'workflow_dispatch' && github.event.inputs.enable == 'true')
     steps:
+      # 克隆仓库步骤
       - name: Clone repository
         uses: actions/checkout@v3
-
+      # 自动提交以生成 HELLO 2018 热力图的步骤
       - name: Auto green to show HELLO 2018 in light green after December 31st, 2017
         run: |
           set -e
+          # 配置 Git 用户邮箱
           git config --local user.email ${{ secrets.EMAIL }}
+          # 配置 Git 用户名称
           git config --local user.name ${{ secrets.NAME }}
+          # 设置远程仓库地址
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          # 拉取并变基更新代码
           git pull --rebase
-          # 2017 年 12 月 31 号作为起始日期
+          # 设置起始日期为 2017 年 12 月 31 日
           start_date="2017-12-31"
-          # 由于起始日期提前一天，需要调整偏移量
+          # 调整后的偏移量，用于绘制 HELLO 2018 图案
           adjusted_offsets_HELLO_2018=(
             # 数码管 H
             6 7 8 13 14 15 20 21 22 27 28 29 34 35 36
@@ -67,12 +82,12 @@ jobs:
             # 数码管 8
             301 302 303 308 309 310 315 316 317 322 323 324 329 330 331
           )
-          # 设定全绿区域的提交次数（高频率）
+          # 全绿区域的提交次数
           full_green_commits=5
-          # 设定 HELLO 2018 区域的提交次数（低频率）
+          # HELLO 2018 区域的提交次数
           light_green_commits=1
-          # 计算 2017 年 12 月 31 日到 2018 年结束的总天数
-          total_days=366  # 2017-12-31 到 2018-12-31 共 366 天
+          # 2017 年 12 月 31 日到 2018 年 12 月 31 日的总天数
+          total_days=366
           for ((day = 0; day < total_days; day++)); do
             commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
             if printf '%s\n' "${adjusted_offsets_HELLO_2018[@]}" | grep -qx "$day"; then
@@ -87,4 +102,5 @@ jobs:
               done
             fi
           done
+          # 推送提交到远程仓库
           git push    
