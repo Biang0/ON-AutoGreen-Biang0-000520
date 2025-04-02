@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       enable:
-        description: "启用或禁用自动 GitHub 自动显示 I Love You 功能"
+        description: "启用或禁用自动显示 I Love You 功能"
         required: true
         default: 'true'
         type: choice
@@ -16,45 +16,36 @@ on:
     branches:
       - master
   schedule:
-    # 每 15 分钟尝试触发一次，一天有 96 个 15 分钟的时间段
-    - cron: "*/15 * * * *"
+    # 每小时触发一次
+    - cron: "0 * * * *"
 
 jobs:
   autogreen:
     runs-on: ubuntu-latest
-    # 检查是否满足触发条件
     if: |
-      (github.event_name == 'schedule' &&
-        (
-          "`expr ${{ github.run_number }} % 4`" == "0" ||
-          "`expr ${{ github.run_number }} % 3`" == "0" ||
-          "`expr ${{ github.run_number }} % 2`" == "0"
-        )
-      ) ||
+      (github.event_name =='schedule') ||
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.enable == 'true')
     steps:
-      - name: Clone repository
+      - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Auto show "I Love You" in 2023
+        with:
+          fetch-depth: 0  # 获取完整提交历史，避免问题
+      - name: Set up Git credentials
         run: |
-          set -e
           git config --local user.email ${{ secrets.EMAIL }}
           git config --local user.name ${{ secrets.NAME }}
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git pull --rebase
-
-          # 2023 年 1 月 1 号作为起始日期
+      - name: Generate and push commits  
+        run: |
           start_date="2023-01-01"
-          # 定义 I Love You 图案的日期偏移量
+          # 重新计算并确定的 "I Love You" 图案日期偏移量
           offsets=(
             3 10 17 29 30 31 32 33 40 47 57 58 59 60 65 66 67 72 73 74 81 88 95 105 106 107 112 113 114 121 128 135 145 146 147 152 153 154 161 168 175 185 186 187 192 193 194 201 208 215
           )
-
           for offset in "${offsets[@]}"; do
             commit_date=$(date -d "$start_date + $offset days" +'%Y-%m-%d %H:%M:%S')
             commit_message="Show 'I Love You' at $commit_date"
             GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "$commit_message" --date "$commit_date"
           done
-          git push    
+          git push -u origin HEAD  # 推送并设置上游分支
