@@ -1,4 +1,4 @@
-name: GitHub Heatmap - 2019 & 2021 (Closed 9)
+name: GitHub Heatmap - HELLO Center 2019
 
 on:
   workflow_dispatch:
@@ -7,61 +7,67 @@ jobs:
   heatmap:
     runs-on: ubuntu-latest
     steps:
-      - name: Clone repository
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Generate custom pattern
+      - name: Generate centered HELLO
         run: |
           set -e
-          git config --local user.email "wangyuan0999@gmail.com"
+          git config --local user.email "wangyuan0999@Gmail.com"
           git config --local user.name "Biang0"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase --autostash
 
-          # 2020年热力图参数
-          start_date="2020-01-05"  # 第一个完整周的周日
-          total_weeks=53
+          # 2019年参数
+          start_date="2019-01-06"  # 第一个完整周的周日
+          total_weeks=52
 
-          # 自定义数字矩阵
-          digits=(
-            "11111\n00010\n11111\n10000\n11111"  # 2（非全闭合）
-            "11111\n10001\n10001\n10001\n11111"  # 0（全闭合）
-            "00100\n00100\n00100\n00100\n00100"  # 1（全闭合）
-            "11111\n10001\n11111\n10001\n11111"  # 9（全闭合）
-            "00100\n00100\n00100\n00100\n00100"  # 1（后半年）
+          # 字母矩阵（5行×7天）
+          letters=(
+            "1000001\n1000001\n1111111\n1000001\n1000001"  # H
+            "1111111\n1000000\n1111111\n1000000\n1111111"  # E
+            "1000000\n1000000\n1000000\n1000000\n1111111"  # L
+            "1000000\n1000000\n1000000\n1000000\n1111111"  # L
+            "1111111\n1000001\n1000001\n1000001\n1111111"  # O
           )
 
-          # 组合数字图案
-          pattern_2019=("${digits[0]} ${digits[1]} ${digits[2]} ${digits[3]}")  # 2019
-          pattern_2021=("${digits[0]} ${digits[1]} ${digits[0]} ${digits[4]}")  # 2021
+          # 组合HELLO图案
+          pattern_hello="${letters[0]} ${letters[1]} ${letters[2]} ${letters[3]} ${letters[4]}"
 
           # 生成提交函数
           generate_pattern() {
             local pattern=$1
             local start_week=$2
-            local year=$3
             local -a rows=($(echo "$pattern" | tr ' ' '\n'))
             
-            for ((week=0; week<26; week++)); do
+            for ((week=0; week<25; week++)); do
               for ((day=0; day<7; day++)); do
                 local pos=$((week*5 + day))
                 if [[ "${rows[day]:pos:1}" == "1" ]]; then
-                  commit_date=$(date -d "$start_date +$((start_week + week)) weeks +$day days" +"%Y-%m-%d %H:%M:%S")
-                  echo "Generating $year commit: $commit_date"
+                  commit_date=$(date -d "$start_date +$((start_week + week)) weeks +$day days" +"%Y-%m-%dT09:00:00Z")
+                  # 每个像素点提交30次
                   for i in {1..30}; do
-                    GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Draw $year at $commit_date (commit $i)" --date "$commit_date"
+                    GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "HELLO Center - $commit_date" --date "$commit_date"
                   done
                 fi
               done
             done
           }
 
-          # 生成2019（周1-26）
-          generate_pattern "$pattern_2019" 0 2019
+          # 生成HELLO（周14-38）
+          generate_pattern "$pattern_hello" 13  # 周14对应start_week=13
 
-          # 生成2021（周27-52）
-          generate_pattern "$pattern_2021" 26 2021
+          # 填充前后空白（可选）
+          for ((week=0; week<13; week++)); do
+            commit_date=$(date -d "$start_date +$week weeks" +"%Y-%m-%dT09:00:00Z")
+            git commit --allow-empty -m "2019 Heatmap - $commit_date" --date "$commit_date"
+          done
+
+          for ((week=39; week<52; week++)); do
+            commit_date=$(date -d "$start_date +$week weeks" +"%Y-%m-%dT09:00:00Z")
+            git commit --allow-empty -m "2019 Heatmap - $commit_date" --date "$commit_date"
+          done
 
           git push --force-with-lease
