@@ -1,56 +1,54 @@
-name: GitHub Heatmap - Transposed Layout
-
+name: GitHub Heatmap - HELLO 2000 (Sunday First)
 on:
   workflow_dispatch:
-
 jobs:
   heatmap:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout Repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Generate transposed pattern
+      - name: Generate Pattern
         run: |
           set -e
           git config --local user.email "wangyuan0999@gmail.com"
           git config --local user.name "Biang0"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase --autostash
-
-          # 2021年参数
-          start_date="2021-01-03"  # 第一个完整周的周日
+          
+          # 2000年参数（2000-01-02为第一个完整周的周日）
+          start_date="2000-01-02"
           total_weeks=52
-
-          # 转置后字母矩阵（7行×5列）
-          letters=(
-            "11111\n00100\n00100\n01110\n00100\n00100\n11111"  # H
-            "11111\n10000\n11111\n10000\n11111"  # E（示例）
-            # 其他字母...
-          )
-
-          # 生成提交函数
-          generate_pattern() {
-            local pattern=$1
-            local -a rows=($(echo "$pattern" | tr ' ' '\n'))
+          
+          # 组合字符：H E L L O [空格] 2 0 0 0
+          pattern="
+            ${characters[0]} ${characters[1]} ${characters[2]} ${characters[2]} ${characters[3]}  # HELLO
+            ${characters[6]}  # 空格
+            ${characters[4]} ${characters[5]} ${characters[5]} ${characters[5]}  # 2000
+          "
+          
+          generate_heatmap() {
+            local -a rows=($(echo "$pattern" | tr '\n' ' '))
+            local char_start_week=0
             
-            for ((week=0; week<52; week++)); do
-              for ((day=0; day<7; day++)); do
-                local pos=$((week*7 + day))
-                if [[ "${rows[day]:pos:1}" == "1" ]]; then
-                  commit_date=$(date -d "$start_date +$week weeks +$day days" +"%Y-%m-%dT09:00:00Z")
-                  # 每个像素点提交30次
-                  for i in {1..30}; do
-                    GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Transposed - $commit_date" --date "$commit_date"
-                  done
-                fi
+            for ((char=0; char<${#rows[@]}; char++)); do
+              local char_data="${rows[char]}"
+              for ((day=0; day<7; day++)); do  # 横轴：周日(0)到周六(6)
+                for ((week=0; week<5; week++)); do  # 竖轴：周数
+                  local pos=$((week*7 + day))
+                  if [[ "${char_data:pos:1}" == "1" ]]; then
+                    # 日期计算：start_date + char_start_week + week周 + day天
+                    commit_date=$(date -d "$start_date +$((char_start_week + week)) weeks +$day days" +"%Y-%m-%dT09:00:00Z")
+                    for i in {1..30}; do  # 提交30次确保深绿色
+                      GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "HELLO 2000" --date "$commit_date"
+                    done
+                  fi
+                done
               done
+              char_start_week=$((char_start_week + 5))
             done
           }
-
-          # 生成HELLO热力图
-          generate_pattern "$pattern_hello"
-
+          
+          generate_heatmap
           git push --force-with-lease
