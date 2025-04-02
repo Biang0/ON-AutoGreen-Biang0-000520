@@ -1,4 +1,4 @@
-name: GitHub Heatmap - HELLO 2000 (Sunday First)
+name: GitHub Heatmap - HELLO 2020
 on:
   workflow_dispatch:
 jobs:
@@ -17,15 +17,15 @@ jobs:
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase --autostash
           
-          # 2000年参数（2000-01-02为第一个完整周的周日）
-          start_date="2000-01-02"
+          # 2020年参数（2020-01-05为第一个完整周的周日）
+          start_date="2020-01-05"
           total_weeks=52
           
-          # 组合字符：H E L L O [空格] 2 0 0 0
+          # 组合字符：H E L L O [空格] 2 0 2 0
           pattern="
-            ${characters[0]} ${characters[1]} ${characters[2]} ${characters[2]} ${characters[3]}  # HELLO
-            ${characters[6]}  # 空格
-            ${characters[4]} ${characters[5]} ${characters[5]} ${characters[5]}  # 2000
+            ${characters[0]} ${characters[1]} ${characters[2]} ${characters[2]} ${characters[3]}  # HELLO (25周)
+            ${characters[6]}  # 空格 (5周)
+            ${characters[4]} ${characters[5]} ${characters[4]} ${characters[5]}  # 2020 (20周)
           "
           
           generate_heatmap() {
@@ -41,7 +41,7 @@ jobs:
                     # 日期计算：start_date + char_start_week + week周 + day天
                     commit_date=$(date -d "$start_date +$((char_start_week + week)) weeks +$day days" +"%Y-%m-%dT09:00:00Z")
                     for i in {1..30}; do  # 提交30次确保深绿色
-                      GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "HELLO 2000" --date "$commit_date"
+                      GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "HELLO 2020" --date "$commit_date"
                     done
                   fi
                 done
