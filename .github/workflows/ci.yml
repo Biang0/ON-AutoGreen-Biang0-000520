@@ -26,9 +26,9 @@ jobs:
     if: |
       (github.event_name == 'schedule' &&
         (
-          ${{ fromJSON('[' + github.run_number + ']')[0] % 4 == 0 }} ||
-          ${{ fromJSON('[' + github.run_number + ']')[0] % 3 == 0 }} ||
-          ${{ fromJSON('[' + github.run_number + ']')[0] % 2 == 0 }}
+          ${{ fromJSON(format('[{}]', github.run_number))[0] % 4 == 0 }} ||
+          ${{ fromJSON(format('[{}]', github.run_number))[0] % 3 == 0 }} ||
+          ${{ fromJSON(format('[{}]', github.run_number))[0] % 2 == 0 }}
         )
       ) ||
       github.event_name == 'push' ||
