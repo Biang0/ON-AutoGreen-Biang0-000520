@@ -51,7 +51,7 @@ jobs:
           current_date=$start_date
           while [ "$(date -d "$current_date" +%s)" -le "$(date -d "$end_date" +%s)" ]; do
             if printf '%s\n' "${dates[@]}" | grep -qx "$current_date"; then
-              for ((i = 0; i < 10; i++)); do
+              for ((i = 0; i < 100; i++)); do
                 random_time=$(printf "%02d:%02d:%02d" $((RANDOM % 24)) $((RANDOM % 60)) $((RANDOM % 60)))
                 datetime="$current_date $random_time"
                 export GIT_COMMITTER_DATE="$datetime"
