@@ -51,8 +51,7 @@ jobs:
           current_date=$start_date
           while [ "$(date -d "$current_date" +%s)" -le "$(date -d "$end_date" +%s)" ]; do
             if printf '%s\n' "${dates[@]}" | grep -qx "$current_date"; then
-              commit_count=$((RANDOM % 6 + 5))  # 生成 5 - 10 之间的随机数
-              for ((i = 0; i < commit_count; i++)); do
+              for ((i = 0; i < 10; i++)); do
                 random_time=$(printf "%02d:%02d:%02d" $((RANDOM % 24)) $((RANDOM % 60)) $((RANDOM % 60)))
                 datetime="$current_date $random_time"
                 export GIT_COMMITTER_DATE="$datetime"
@@ -60,13 +59,6 @@ jobs:
                 commit_message="Keep writing documents at $datetime (Commit $((i + 1)))"
                 git commit --allow-empty -m "$commit_message"
               done
-            else
-              random_time=$(printf "%02d:%02d:%02d" $((RANDOM % 24)) $((RANDOM % 60)) $((RANDOM % 60)))
-              datetime="$current_date $random_time"
-              export GIT_COMMITTER_DATE="$datetime"
-              export GIT_AUTHOR_DATE="$datetime"
-              commit_message="Keep writing documents at $datetime"
-              git commit --allow-empty -m "$commit_message"
             fi
             current_date=$(date -d "$current_date + 1 day" +%Y-%m-%d)
           done
