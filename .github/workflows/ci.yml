@@ -1,74 +1,42 @@
-name: GitHub Heatmap - 2010 Special Pattern
-on:
-  workflow_dispatch:
-
-jobs:
-  heatmap:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write  # 关键权限
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Generate 2010 Pattern
-        run: |
-          set -e
-          git config --local user.email "your_email@example.com"
-          git config --local user.name "Your Name"
-          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git pull --rebase --autostash
-          
-          # 2010年参数（2010-01-03为第一个完整周的周日）
-          start_date="2010-01-03"
-          total_weeks=52
-
-          # 数码管字符矩阵（7天×5周）
-          characters=(
-            "11111\n00001\n11111\n10000\n11111"  # 2
-            "11111\n10001\n10001\n10001\n11111"  # 0
-            "00100\n00100\n00100\n00100\n00100"  # 1
-          )
-
-          # 组合字符：2010
-          pattern="
-            ${characters[0]} ${characters[1]} ${characters[2]} ${characters[1]}
-          "
-
-          generate_heatmap() {
-            local -a rows=($(echo "$pattern" | tr '\n' ' '))
-            local char_start_week=16  # 从周17开始显示（居中）
-
-            for ((char=0; char<${#rows[@]}; char++)); do
-              local char_data="${rows[char]}"
-              for ((week=0; week<5; week++)); do  # 每个字符占5周
-                for ((day=0; day<7; day++)); do  # 每天对应7天
-                  local pos=$((week*7 + day))  # 修正行列映射
-                  if [[ "${char_data:pos:1}" == "1" ]]; then
-                    commit_date=$(date -d "$start_date +$((char_start_week + week)) weeks +$day days" +"%Y-%m-%dT09:00:00Z")
-                    [[ "$commit_date" > "2010-12-31" ]] && break  # 防止跨年
-                    for i in {1..50}; do  # 增加提交次数到50次
-                      GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "2010" --date "$commit_date"
-                    done
-                  fi
-                done
-              done
-              char_start_week=$((char_start_week + 5))
-            done
-          }
-
-          # 生成全年绿色背景（低频率）
-          for ((week=0; week<52; week++)); do
-            for ((day=0; day<7; day++)); do
-              commit_date=$(date -d "$start_date +$week weeks +$day days" +"%Y-%m-%dT09:00:00Z")
-              [[ "$commit_date" > "2010-12-31" ]] && break
-              for i in {1..1}; do  # 普通绿色区域提交1次
-                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "2010 Background" --date "$commit_date"
-              done
-            done
-          }
-
-          generate_heatmap
-          git push --force-with-lease
+- name: Auto green to show 2019 in dark green
+  run: |
+    set -e
+    git config --local user.email "${{ secrets.EMAIL }}"
+    git config --local user.name "${{ secrets.NAME }}"
+    git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+    git pull --rebase
+    
+    start_date="2019-01-06"  # 2019年第一个星期日
+    offsets_2019=(
+      # 数字2
+      175 176 177 178 182 183 184 185 189 196 203 206 207 208 209 213 214 215 216 220 227 234 237 238 239 240 244 245 246 247
+      
+      # 数字0
+      179 180 181 182 186 187 188 189 193 200 207 214 217 218 219 220 224 225 226 227 196 203 210 217
+      
+      # 数字1
+      176 183 190 197 204 211 218 225 232 239 246 253
+      
+      # 数字9
+      183 184 185 186 190 191 192 193 195 202 209 216 219 220 221 222 226 227 228 229 231 238 245 252 255 256 257 258
+    )
+    
+    light_green_commits=5     # 背景区域提交次数（浅色）
+    full_green_commits=1      # 数字区域提交次数（深色）
+    total_days=364
+    
+    for (( day = 0; day < total_days; day++ )); do
+      commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
+      
+      if printf '%s\n' "${offsets_2019[@]}" | grep -qx "$day"; then
+        for (( i = 0; i < full_green_commits; i++ )); do
+          GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Dark green at $commit_date" --date "$commit_date"
+        done
+      else
+        for (( i = 0; i < light_green_commits; i++ )); do
+          GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Light green at $commit_date" --date "$commit_date"
+        done
+      fi
+    done
+    
+    git push
