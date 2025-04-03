@@ -11,9 +11,15 @@ jobs:
   autogreen:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 确保获取完整提交历史
+
       - name: Auto green to show 2019 in dark green
         run: |
           set -e
+          echo "Current directory:" $(pwd)  # 调试输出当前目录
           git config --local user.email "${{ secrets.EMAIL }}"
           git config --local user.name "${{ secrets.NAME }}"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
