@@ -1,59 +1,57 @@
-name: Auto Green 2023 (50 Commits Dark)
+name: ci
 
 on:
+  # 手动触发事件
+  workflow_dispatch:
+    inputs:
+      enable:
+        description: "启用或禁用自动 GitHub 自动全绿功能"
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
   push:
     branches:
       - master
   schedule:
-    - cron: "0 0 * * *"  # 每天执行
+    # 每 15 分钟尝试触发一次，一天有 96 个 15 分钟的时间段
+    - cron: "*/15 * * * *"
 
 jobs:
   autogreen:
     runs-on: ubuntu-latest
+    # 检查是否满足触发条件
+    if: |
+      (github.event_name == 'schedule' &&
+        (
+          "`expr ${{ github.run_number }} % 4`" == "0" ||
+          "`expr ${{ github.run_number }} % 3`" == "0" ||
+          "`expr ${{ github.run_number }} % 2`" == "0"
+        )
+      ) ||
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.enable == 'true')
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 获取完整提交历史
+      - name: Clone repository
+        uses: actions/checkout@v3
 
-      - name: Auto green to show 2023
+      - name: Auto green
         run: |
           set -e
-          git config --local user.email "${{ secrets.EMAIL }}"
-          git config --local user.name "${{ secrets.NAME }}"
+          git config --local user.email ${{ secrets.EMAIL }}
+          git config --local user.name ${{ secrets.NAME }}
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
-          
-          start_date="2023-01-01"  # 2023年第一个星期日
-          offsets_2023=(
-            # 数字2（左）
-            175 176 177 178 179 182 183 184 185 189 196 203 206 207 208 209 213 214 215 216 220 227 234 237 238 239 240 244 245 246 247
-            
-            # 数字0（中左）
-            201 202 203 204 208 209 210 211 215 222 229 232 233 234 235 239 240 241 242 243 227 234 241 248
-            
-            # 数字2（中右）
-            267 268 269 270 274 275 276 277 281 288 295 298 299 300 301 305 306 307 308 312 319 326 329 330 331 332 336 337 338 339
-            
-            # 数字3（右）
-            303 304 305 306 310 311 312 313 317 324 331 338 341 342 343 344 348 349 350 351 329 336 343 350
-          )
-          
-          light_green_commits=0     # 浅色区域不提交
-          full_green_commits=50     # 深色区域每天提交50次
-          total_days=365            # 2023年非闰年共365天
-          
-          for (( day = 0; day < total_days; day++ )); do
-            commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
-            
-            if printf '%s\n' "${offsets_2023[@]}" | grep -qx "$day"; then
-              for (( i = 0; i < full_green_commits; i++ )); do
-                GIT_COMMITTER_DATE="$commit_date" git commit --allow-empty -m "Dark green at $commit_date" --date "$commit_date"
-              done
-            else
-              # 浅色区域不提交
-              :
-            fi
+          # 定义 2023 年指定日期列表
+          dates=("2023-04-02" "2023-04-05" "2023-04-06" "2023-04-07" "2023-04-08" "2023-04-09" "2023-04-12" "2023-04-15" "2023-04-16" "2023-04-19" "2023-04-22" "2023-04-23" "2023-04-26" "2023-04-29" "2023-04-30" "2023-05-01" "2023-05-02" "2023-05-03" "2023-05-06" "2023-05-21" "2023-05-22" "2023-05-23" "2023-05-24" "2023-05-25" "2023-05-26" "2023-05-27" "2023-05-28" "2023-06-03" "2023-06-04" "2023-06-10" "2023-06-11" "2023-06-17" "2023-06-18" "2023-06-19" "2023-06-20" "2023-06-21" "2023-06-22" "2023-06-23" "2023-06-24" "2023-07-09" "2023-07-12" "2023-07-13" "2023-07-14" "2023-07-15" "2023-07-16" "2023-07-19" "2023-07-22" "2023-07-23" "2023-07-26" "2023-07-29" "2023-07-30" "2023-08-02" "2023-08-05" "2023-08-06" "2023-08-07" "2023-08-08" "2023-08-09" "2023-08-12" "2023-08-27" "2023-08-30" "2023-09-02" "2023-09-03" "2023-09-06" "2023-09-09" "2023-09-10" "2023-09-13" "2023-09-16" "2023-09-17" "2023-09-20" "2023-09-23" "2023-09-24" "2023-09-27" "2023-09-30" "2023-10-01" "2023-10-02" "2023-10-03" "2023-10-04" "2023-10-05" "2023-10-06" "2023-10-07")
+          for date in "${dates[@]}"; do
+            random_time=$(printf "%02d:%02d:%02d" $((RANDOM % 24)) $((RANDOM % 60)) $((RANDOM % 60)))
+            datetime="$date $random_time"
+            export GIT_COMMITTER_DATE="$datetime"
+            export GIT_AUTHOR_DATE="$datetime"
+            commit_message="Keep writing documents at $datetime"
+            git commit --allow-empty -m "$commit_message"
           done
-          
-          git push
+          git push    
