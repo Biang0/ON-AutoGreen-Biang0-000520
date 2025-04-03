@@ -1,4 +1,4 @@
-name: Auto Green 2020
+name: Auto Green 2020 (Dark 50 commits)
 
 on:
   push:
@@ -39,9 +39,9 @@ jobs:
             239 240 241 242 246 247 248 249 253 260 267 274 277 278 279 280 284 285 286 287 256 263 270 277
           )
           
-          light_green_commits=1     # 背景区域提交次数（浅色）
-          full_green_commits=5      # 数字区域提交次数（深色）
-          total_days=366            # 2020年闰年共366天
+          light_green_commits=1      # 背景区域提交次数（浅色）
+          full_green_commits=50      # 数字区域提交次数（深色） → 改为50
+          total_days=366             # 2020年闰年共366天
           
           for (( day = 0; day < total_days; day++ )); do
             commit_date=$(date -d "$start_date + $day days" +'%Y-%m-%d %H:%M:%S')
