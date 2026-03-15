@@ -2,14 +2,18 @@ name: 'workflows日志自动清理'
 
 on:
   schedule:
-    - cron: '0 0 */3 * *'
-  workflow_dispatch:
+    - cron: '0 0 */3 * *'  # 每3天执行一次
+  workflow_dispatch:      # 支持手动触发
 
 jobs:
   del_workflow:
     runs-on: ubuntu-latest
+    permissions:  # 必须添加：赋予删除工作流的权限
+      actions: write
+      contents: read
     steps:
       - name: Delete workflow runs
         uses: GitRML/delete-workflow-runs@main
         with:
-          retain_days: '1'
+          retain_days: 1  # 修复：去掉引号，纯数字即可
+          keep_minimum_runs: 3  # 可选：保留最近3条日志，避免全部删光
