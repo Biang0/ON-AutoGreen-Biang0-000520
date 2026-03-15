@@ -20,22 +20,22 @@ on:
 jobs:
   autogreen:
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'schedule' && (
-        github.run_number % 4 == 0 ||
-        github.run_number % 3 == 0 ||
-        github.run_number % 2 == 0
-      )) ||
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.enable == 'true')
-
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4  # 这里升级到 v4，Node24 无警告
+        uses: actions/checkout@v4
 
       - name: Auto green
         run: |
           set -e
+          # 只有 schedule 触发时，随机概率执行，避免风控
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+           num=$(( RANDOM % 4 ))
+            if [[ $num != 0 ]]; then
+              echo "本次 schedule 触发不执行"
+              exit 0
+            fi
+          fi
+
           git config --local user.email "${{ secrets.EMAIL }}"
           git config --local user.name "${{ secrets.NAME }}"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
