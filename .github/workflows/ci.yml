@@ -1,45 +1,69 @@
 name: ci
 
 on:
+  # 手动触发开关
   workflow_dispatch:
     inputs:
       enable:
-        description: "启用或禁用自动 GitHub 自动全绿功能"
+        description: "启用自动全绿提交"
         required: true
         default: 'true'
         type: choice
         options:
           - 'true'
           - 'false'
+  # 推送代码时触发
   push:
     branches:
       - master
+  # 定时触发（每15分钟检查一次）
   schedule:
     - cron: "*/15 * * * *"
+
+# 全局配置：强制使用 Node.js 24，彻底消除弃用警告
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+# 给 GitHub Token 配置写入权限，避免推送失败
+permissions:
+  contents: write
 
 jobs:
   autogreen:
     runs-on: ubuntu-latest
     steps:
-      - name: Clone repository
+      - name: 拉取仓库代码
         uses: actions/checkout@v4
 
-      - name: Auto green
+      - name: 自动全绿提交
         run: |
           set -e
-          # 只有 schedule 触发时，随机概率执行，避免风控
+
+          # ========== 防风控逻辑 ==========
+          # 定时触发时，仅25%概率执行提交，避免高频提交被GitHub判定异常
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
-           num=$(( RANDOM % 4 ))
-            if [[ $num != 0 ]]; then
-              echo "本次 schedule 触发不执行"
+            random_num=$(( RANDOM % 4 ))
+            if [[ $random_num -ne 0 ]]; then
+              echo "本次定时触发不执行提交，跳过"
               exit 0
             fi
           fi
 
+          # 手动触发时，判断开关是否开启
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.enable }}" != "true" ]]; then
+            echo "手动触发已禁用，跳过"
+            exit 0
+          fi
+
+          # ========== Git 提交配置 ==========
           git config --local user.email "${{ secrets.EMAIL }}"
           git config --local user.name "${{ secrets.NAME }}"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          
+          # 拉取最新代码，避免冲突
           git pull --rebase
-          commit_message="Keep writing documents at $(date +'%Y-%m-%d %H:%M:%S')"
+          
+          # 生成空提交，更新贡献日历
+          commit_message="docs: update at $(date +'%Y-%m-%d %H:%M:%S')"
           git commit --allow-empty -m "$commit_message"
           git push
